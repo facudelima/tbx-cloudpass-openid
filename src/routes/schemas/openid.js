@@ -42,9 +42,9 @@ const tokenSchema = {
     type: 'object',
     required: ['grant_type', 'client_id', 'client_secret'],
     properties: {
-      grant_type: { 
-        type: 'string', 
-        enum: ['authorization_code', 'refresh_token'] 
+      grant_type: {
+        type: 'string',
+        enum: ['authorization_code', 'refresh_token']
       },
       client_id: { type: 'string' },
       client_secret: { type: 'string' },
@@ -168,4 +168,4 @@ module.exports = {
   tokenSchema,
   userInfoSchema,
   authzSchema
-}; 
+};

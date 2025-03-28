@@ -17,7 +17,7 @@ class OpenIDService {
       algorithm: 'HS256',
       secretKey: config.secretKey || crypto.randomBytes(64).toString('hex')
     };
-    
+
     // Código de autorización fijo para pruebas de automatización
     this.fixedAuthCode = '0000-0000-0000-0000';
     this.fixedAuthCodeData = {
@@ -37,7 +37,7 @@ class OpenIDService {
    */
   async generateAuthorizationCode(authRequest) {
     const code = uuidv4();
-    
+
     // Almacenar el código y los datos asociados
     await openidStore.storeAuthCode(code, {
       client_id: authRequest.client_id,
@@ -48,7 +48,7 @@ class OpenIDService {
       nonce: authRequest.nonce,
       exp: Math.floor(Date.now() / 1000) + 600 // 10 minutos
     });
-    
+
     return code;
   }
 
@@ -64,27 +64,27 @@ class OpenIDService {
     if (code === this.fixedAuthCode) {
       return this.fixedAuthCodeData;
     }
-    
+
     const codeData = await openidStore.getAuthCode(code);
-    
+
     if (!codeData) {
       return null;
     }
-    
+
     // Verificar que el código no haya expirado
     if (codeData.exp < Math.floor(Date.now() / 1000)) {
       await openidStore.removeAuthCode(code);
       return null;
     }
-    
+
     // Verificar que el cliente y la URI de redirección coincidan
     if (codeData.client_id !== clientId || codeData.redirect_uri !== redirectUri) {
       return null;
     }
-    
+
     // Eliminar el código después de usarlo
     await openidStore.removeAuthCode(code);
-    
+
     return codeData;
   }
 
@@ -95,10 +95,10 @@ class OpenIDService {
    */
   async generateTokens(tokenData) {
     const now = Math.floor(Date.now() / 1000);
-    
+
     // Generar ID de token
     const jti = uuidv4();
-    
+
     // Generar token de acceso
     const accessToken = jwt.sign({
       iss: this.tokenConfig.issuer,
@@ -111,10 +111,10 @@ class OpenIDService {
       client_id: tokenData.client_id,
       nonce: tokenData.nonce
     }, this.tokenConfig.secretKey, { algorithm: this.tokenConfig.algorithm });
-    
+
     // Generar token de refresco
     const refreshToken = crypto.randomBytes(64).toString('hex');
-    
+
     // Almacenar el token de refresco
     await openidStore.storeRefreshToken(refreshToken, {
       user_id: tokenData.user_id,
@@ -123,7 +123,7 @@ class OpenIDService {
       jti,
       exp: now + this.tokenConfig.refreshTokenExpiry
     });
-    
+
     return {
       access_token: accessToken,
       token_type: 'Bearer',
@@ -142,25 +142,25 @@ class OpenIDService {
    */
   async refreshAccessToken(refreshToken, clientId) {
     const tokenData = await openidStore.getRefreshToken(refreshToken);
-    
+
     if (!tokenData) {
       return null;
     }
-    
+
     // Verificar que el token no haya expirado
     if (tokenData.exp < Math.floor(Date.now() / 1000)) {
       await openidStore.removeRefreshToken(refreshToken);
       return null;
     }
-    
+
     // Verificar que el cliente coincida
     if (tokenData.client_id !== clientId) {
       return null;
     }
-    
+
     // Eliminar el token de refresco anterior
     await openidStore.removeRefreshToken(refreshToken);
-    
+
     // Generar nuevos tokens
     return this.generateTokens({
       user_id: tokenData.user_id,
@@ -181,7 +181,7 @@ class OpenIDService {
         issuer: this.tokenConfig.issuer,
         audience: this.tokenConfig.audience
       });
-      
+
       return decoded;
     } catch (error) {
       return null;
@@ -195,11 +195,11 @@ class OpenIDService {
    */
   async getUserInfo(accessToken) {
     const tokenData = await this.validateAccessToken(accessToken);
-    
+
     if (!tokenData) {
       return null;
     }
-    
+
     // En un caso real, aquí se obtendría la información del usuario desde una base de datos
     // Para este ejemplo, devolvemos información básica basada en el sub (user_id)
     return {
@@ -207,7 +207,7 @@ class OpenIDService {
       name: `User ${tokenData.sub}`,
       email: `${tokenData.sub}@example.com`,
       email_verified: true,
-      country_code: "UY"
+      country_code: 'UY'
     };
   }
 
@@ -219,14 +219,14 @@ class OpenIDService {
    */
   async authorize(accessToken, resourceId) {
     const tokenData = await this.validateAccessToken(accessToken);
-    
+
     if (!tokenData) {
       return {
         access: false,
         reason: 'invalid_token'
       };
     }
-    
+
     // Verificar que el resourceId comience con "urn:tve:"
     if (!resourceId || !resourceId.startsWith('urn:tve:')) {
       return {
@@ -234,7 +234,7 @@ class OpenIDService {
         reason: 'invalid_resource'
       };
     }
-    
+
     // En un caso real, aquí se verificaría si el usuario tiene permisos para el recurso
     // Para este ejemplo, autorizamos todas las solicitudes con un token válido
     return {
@@ -244,4 +244,4 @@ class OpenIDService {
   }
 }
 
-module.exports = new OpenIDService(); 
+module.exports = new OpenIDService();

@@ -10,7 +10,7 @@ class OpenIDStore {
       authCodes: new Map(),
       refreshTokens: new Map()
     };
-    
+
     // Prefijos para las claves
     this.prefixes = {
       authCode: 'auth_code:',
@@ -26,7 +26,7 @@ class OpenIDStore {
    */
   async storeAuthCode(code, data) {
     const key = this.prefixes.authCode + code;
-    
+
     try {
       this.storage.authCodes.set(key, {
         data: JSON.stringify(data),
@@ -46,20 +46,20 @@ class OpenIDStore {
    */
   async getAuthCode(code) {
     const key = this.prefixes.authCode + code;
-    
+
     try {
       const entry = this.storage.authCodes.get(key);
-      
+
       if (!entry) {
         return null;
       }
-      
+
       // Verificar si ha expirado
       if (entry.expiry < Date.now()) {
         this.storage.authCodes.delete(key);
         return null;
       }
-      
+
       return JSON.parse(entry.data);
     } catch (error) {
       console.error('Error al obtener código de autorización:', error);
@@ -74,7 +74,7 @@ class OpenIDStore {
    */
   async removeAuthCode(code) {
     const key = this.prefixes.authCode + code;
-    
+
     try {
       this.storage.authCodes.delete(key);
       return true;
@@ -93,7 +93,7 @@ class OpenIDStore {
   async storeRefreshToken(token, data) {
     const key = this.prefixes.refreshToken + token;
     const ttl = config.refreshTokenExpiry || 86400; // 24 horas por defecto
-    
+
     try {
       this.storage.refreshTokens.set(key, {
         data: JSON.stringify(data),
@@ -113,20 +113,20 @@ class OpenIDStore {
    */
   async getRefreshToken(token) {
     const key = this.prefixes.refreshToken + token;
-    
+
     try {
       const entry = this.storage.refreshTokens.get(key);
-      
+
       if (!entry) {
         return null;
       }
-      
+
       // Verificar si ha expirado
       if (entry.expiry < Date.now()) {
         this.storage.refreshTokens.delete(key);
         return null;
       }
-      
+
       return JSON.parse(entry.data);
     } catch (error) {
       console.error('Error al obtener token de refresco:', error);
@@ -141,7 +141,7 @@ class OpenIDStore {
    */
   async removeRefreshToken(token) {
     const key = this.prefixes.refreshToken + token;
-    
+
     try {
       this.storage.refreshTokens.delete(key);
       return true;
@@ -152,4 +152,4 @@ class OpenIDStore {
   }
 }
 
-module.exports = new OpenIDStore(); 
+module.exports = new OpenIDStore();

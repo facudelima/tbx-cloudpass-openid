@@ -113,112 +113,159 @@ const bodyParser = require('body-parser');
 // Middleware para parsear x-www-form-urlencoded
 router.use(bodyParser.urlencoded({ extended: true }));
 
-// Endpoint de autorización con formulario de login simple
-router.get('/authorize', async (req, res) => {
-  const { response_type: responseType, client_id: clientId, redirect_uri: redirectUri, 
-    scope, state, nonce } = req.query;
-  
-  // Verificar que el tipo de respuesta sea 'code'
+// Funciones auxiliares para el endpoint /authorize
+const validateAuthorizeParams = (responseType, clientId, redirectUri, client) => {
   if (responseType !== 'code') {
-    return res.status(400).json({
-      error: 'unsupported_response_type',
-      error_description: 'Solo se admite response_type=code'
-    });
+    return {
+      error: true,
+      status: 400,
+      response: {
+        error: 'unsupported_response_type',
+        error_description: 'Solo se admite response_type=code'
+      }
+    };
   }
-  
-  // Verificar que el cliente exista
-  const client = config.clients.find(c => c.id === clientId);
+
   if (!client) {
-    return res.status(400).json({
-      error: 'invalid_client',
-      error_description: 'Cliente no válido'
-    });
+    return {
+      error: true,
+      status: 400,
+      response: {
+        error: 'invalid_client',
+        error_description: 'Cliente no válido'
+      }
+    };
   }
-  
-  // Verificar que la URI de redirección esté permitida
+
   if (!client.redirectUris.includes(redirectUri)) {
-    return res.status(400).json({
-      error: 'invalid_redirect_uri',
-      error_description: 'URI de redirección no permitida'
-    });
+    return {
+      error: true,
+      status: 400,
+      response: {
+        error: 'invalid_redirect_uri',
+        error_description: 'URI de redirección no permitida'
+      }
+    };
   }
-  
-  // Generar un formulario de login simple
-  const loginForm = `
+
+  return { error: false };
+};
+
+const getFormStyle = () => `
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .login-container {
+    width: 300px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+`;
+
+const getHiddenInputs = (params) => {
+  const { responseType, clientId, redirectUri, scope, state, nonce } = params;
+  return `
+    <input type="hidden" name="response_type" value="${responseType}">
+    <input type="hidden" name="client_id" value="${clientId}">
+    <input type="hidden" name="redirect_uri" value="${redirectUri}">
+    <input type="hidden" name="scope" value="${scope || ''}">
+    <input type="hidden" name="state" value="${state || ''}">
+    <input type="hidden" name="nonce" value="${nonce || ''}">
+  `;
+};
+
+const generateLoginForm = (params) => {
+  const formStyle = getFormStyle();
+  const hiddenInputs = getHiddenInputs(params);
+
+  return `
     <!DOCTYPE html>
     <html>
     <head>
       <title>Login</title>
-      <style>
-        body { 
-          font-family: Arial, sans-serif; 
-          margin: 0; 
-          padding: 20px; 
-          display: flex; 
-          justify-content: center; 
-          align-items: center; 
-          height: 100vh; 
-        }
-        .login-container { 
-          width: 300px; 
-          padding: 20px; 
-          border: 1px solid #ccc; 
-          border-radius: 5px; 
-        }
-        .form-group { 
-          margin-bottom: 15px; 
-        }
-        label { 
-          display: block; 
-          margin-bottom: 5px; 
-        }
-        input[type="text"], 
-        input[type="password"] { 
-          width: 100%; 
-          padding: 8px; 
-          box-sizing: border-box; 
-        }
-        button { 
-          background-color: #4CAF50; 
-          color: white; 
-          padding: 10px 15px; 
-          border: none; 
-          border-radius: 4px; 
-          cursor: pointer; 
-        }
-        button:hover { 
-          background-color: #45a049; 
-        }
-      </style>
+      <style>${formStyle}</style>
     </head>
     <body>
       <div class="login-container">
         <h2>Login</h2>
         <form action="/authorize" method="post">
-          <input type="hidden" name="response_type" value="${responseType}">
-          <input type="hidden" name="client_id" value="${clientId}">
-          <input type="hidden" name="redirect_uri" value="${redirectUri}">
-          <input type="hidden" name="scope" value="${scope || ''}">
-          <input type="hidden" name="state" value="${state || ''}">
-          <input type="hidden" name="nonce" value="${nonce || ''}">
-          
+          ${hiddenInputs}
           <div class="form-group">
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
           </div>
-          
           <div class="form-group">
             <label for="password">Password:</label>
             <input type="password" id="password" name="password" required>
           </div>
-          
           <button type="submit">Login</button>
         </form>
       </div>
     </body>
     </html>
   `;
-  
+};
+
+// Endpoint de autorización con formulario de login simple
+router.get('/authorize', async(req, res) => {
+  const {
+    response_type: responseType,
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope,
+    state,
+    nonce
+  } = req.query;
+
+  const client = config.clients.find(c => c.id === clientId);
+
+  // Validar parámetros
+  const validation = validateAuthorizeParams(responseType, clientId, redirectUri, client);
+  if (validation.error) {
+    return res.status(validation.status).json(validation.response);
+  }
+
+  // Generar y enviar formulario de login
+  const loginForm = generateLoginForm({
+    responseType,
+    clientId,
+    redirectUri,
+    scope,
+    state,
+    nonce
+  });
+
   res.send(loginForm);
 });
 
@@ -257,10 +304,10 @@ router.get('/authorize', async (req, res) => {
  */
 
 // Endpoint para procesar el formulario de login
-router.post('/authorize', async (req, res) => {
-  const { client_id: clientId, redirect_uri: redirectUri, scope, state, 
+router.post('/authorize', async(req, res) => {
+  const { client_id: clientId, redirect_uri: redirectUri, scope, state,
     nonce, username } = req.body;
-  
+
   // Generar código de autorización
   const code = await openidService.generateAuthorizationCode({
     clientId,
@@ -270,12 +317,12 @@ router.post('/authorize', async (req, res) => {
     user_id: username,
     nonce: nonce || ''
   });
-  
+
   // Redireccionar con el código de autorización
   const redirectUrl = new URL(redirectUri);
   redirectUrl.searchParams.append('code', code);
   redirectUrl.searchParams.append('state', state || '');
-  
+
   return res.redirect(302, redirectUrl.toString());
 });
 
@@ -286,7 +333,7 @@ router.post('/authorize', async (req, res) => {
  *     summary: Endpoint de token
  *     description: |
  *       Intercambia el código de autorización por tokens de acceso o refresca un token existente.
- *       
+ *
  *       Hay dos flujos posibles:
  *       1. Authorization Code Flow: Intercambia un código de autorización por tokens de acceso
  *       2. Refresh Token Flow: Usa un refresh token para obtener un nuevo access token
@@ -380,11 +427,11 @@ router.post('/authorize', async (req, res) => {
  */
 
 // Endpoint de token
-router.post('/token', async (req, res) => {
-  const { grant_type: grantType, client_id: clientId, 
-    client_secret: clientSecret, code, redirect_uri: redirectUri, 
+router.post('/token', async(req, res) => {
+  const { grant_type: grantType, client_id: clientId,
+    client_secret: clientSecret, code, redirect_uri: redirectUri,
     refresh_token: refreshToken } = req.body;
-  
+
   // Verificar que el cliente exista y las credenciales sean correctas
   const client = config.clients.find(c => c.id === clientId && c.secret === clientSecret);
   if (!client) {
@@ -393,27 +440,27 @@ router.post('/token', async (req, res) => {
       error_description: 'Credenciales de cliente no válidas'
     });
   }
-  
+
   let tokens;
-  
+
   // Procesar según el tipo de concesión
   if (grantType === 'authorization_code') {
     // Validar el código de autorización
     const codeData = await openidService.validateAuthorizationCode(code, clientId, redirectUri);
-    
+
     if (!codeData) {
       return res.status(400).json({
         error: 'invalid_grant',
         error_description: 'Código de autorización no válido'
       });
     }
-    
+
     // Generar tokens
     tokens = await openidService.generateTokens(codeData);
   } else if (grantType === 'refresh_token') {
     // Refrescar token
     tokens = await openidService.refreshAccessToken(refreshToken, clientId);
-    
+
     if (!tokens) {
       return res.status(400).json({
         error: 'invalid_grant',
@@ -426,7 +473,7 @@ router.post('/token', async (req, res) => {
       error_description: 'Tipo de concesión no soportado'
     });
   }
-  
+
   return res.json(tokens);
 });
 
@@ -450,26 +497,26 @@ router.post('/token', async (req, res) => {
  */
 
 // Endpoint de información del usuario
-router.get('/userinfo', async (req, res) => {
+router.get('/userinfo', async(req, res) => {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({
       error: 'invalid_token',
       error_description: 'Token no proporcionado o formato incorrecto'
     });
   }
-  
+
   const accessToken = authHeader.substring(7);
   const userInfo = await openidService.getUserInfo(accessToken);
-  
+
   if (!userInfo) {
     return res.status(401).json({
       error: 'invalid_token',
       error_description: 'Token no válido'
     });
   }
-  
+
   return res.json(userInfo);
 });
 
@@ -506,9 +553,9 @@ router.get('/userinfo', async (req, res) => {
  */
 
 // Endpoint de autorización
-router.get('/authz', async (req, res) => {
+router.get('/authz', async(req, res) => {
   const { access_token: accessToken, resource_id: resourceId } = req.query;
-  
+
   // Verificar que se proporcionó un token de acceso
   if (!accessToken) {
     return res.status(401).json({
@@ -516,7 +563,7 @@ router.get('/authz', async (req, res) => {
       error_description: 'Token no proporcionado'
     });
   }
-  
+
   // Verificar que se proporcionó un resource_id
   if (!resourceId) {
     return res.status(400).json({
@@ -524,7 +571,7 @@ router.get('/authz', async (req, res) => {
       error_description: 'resource_id no proporcionado'
     });
   }
-  
+
   // Verificar que resource_id comienza con "urn:tve:"
   if (!resourceId.startsWith('urn:tve:')) {
     return res.status(400).json({
@@ -532,18 +579,18 @@ router.get('/authz', async (req, res) => {
       error_description: 'resource_id debe comenzar con "urn:tve:"'
     });
   }
-  
+
   // Validar el token de acceso y autorizar
   const authzResult = await openidService.authorize(accessToken, resourceId);
-  
+
   if (!authzResult.access) {
     return res.status(401).json({
       error: 'unauthorized',
       error_description: authzResult.reason || 'No autorizado'
     });
   }
-  
+
   return res.json(authzResult);
 });
 
-module.exports = router; 
+module.exports = router;

@@ -80,7 +80,7 @@ const loadAllRoutes = (app, apiVersion) => {
       if (file.endsWith('.json')) {
         return;
       }
-      
+
       const module = path.join(__dirname, 'routes', file);
       const moduleRoute = file.substr(0, file.indexOf('.')).toLowerCase();
 
@@ -105,13 +105,13 @@ loadAllRoutes(app, config.swagger.basePath);
 if (config.isShowDocs()) {
   const { initialConfig } = config;
   const staticPath = path.join(__dirname, '../docs', 'api', initialConfig.package.name, initialConfig.package.version);
-  
+
   // swagger
   app.use('/explorer', swaggerUi.serve, swaggerUi.setup(swagger, {
     customfavIcon: '/public/favicon.ico',
-    customSiteTitle: "OpenID Connect API Documentation"
+    customSiteTitle: 'OpenID Connect API Documentation'
   }));
-  
+
   app.use('/docs', express.static(staticPath));
   app.use('/swagger.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
