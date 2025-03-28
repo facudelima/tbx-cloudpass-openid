@@ -9,7 +9,11 @@
     {
       "id": "automation_client",
       "secret": "automation_secret",
-      "redirectUris": ["https://automation.cloudpass.local/callback"],
+      "redirectUris": [
+        "https://automation.cloudpass.local/callback",
+        "https://sp-cert.tbxnet.com/v2/auth/oauth2/assert",
+        "https://sp.tbxnet.com/v2/auth/oauth2/assert"
+      ],
       "allowedScopes": ["openid", "profile", "email"]
     }
   ]
