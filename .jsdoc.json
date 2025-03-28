@@ -1,0 +1,25 @@
+{
+  "source": {
+    "include": ["src/", "package.json", "README.md"],
+    "includePattern": ".js$",
+    "excludePattern": "(node_modules/|docs)"
+  },
+  "opts": {
+    "destination": "docs/api",
+    "template": "node_modules/minami",
+    "recurse": true,
+    "encoding": "utf8"
+  },
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc"]
+  },
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": true,
+    "useLongnameInNav": false,
+    "showInheritedInNav": true,
+    "name": "API Documentation"
+  },
+  "plugins": ["plugins/markdown"]
+}

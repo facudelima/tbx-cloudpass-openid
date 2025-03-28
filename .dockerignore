@@ -1,0 +1,25 @@
+.bkp/
+.idea/
+.nyc_output/
+.vscode/
+.env
+logs
+*.log
+.git/
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+coverage
+
+# Grunt intermediate storage (http://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Compiled binary addons (http://nodejs.org/api/addons.html)
+build/Release
+*/build/*
+node_modules
+dist/
+testreport/

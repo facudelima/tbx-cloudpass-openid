@@ -1,0 +1,16 @@
+{
+  "shortName": "automation_id",
+  "issuer": "cloudpass-automation",
+  "audience": "cloudpass-clients",
+  "accessTokenExpiry": 600,
+  "refreshTokenExpiry": 86400,
+  "secretKey": "automation-secret-key-for-jwt-signing",
+  "clients": [
+    {
+      "id": "automation_client",
+      "secret": "automation_secret",
+      "redirectUris": ["https://automation.cloudpass.local/callback"],
+      "allowedScopes": ["openid", "profile", "email"]
+    }
+  ]
+} 

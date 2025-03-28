@@ -1,0 +1,101 @@
+{
+  "name": "tbx-base-nodejs",
+  "version": "0.7.1",
+  "description": "Base TBX para API nodeJS",
+  "private": true,
+  "scripts": {
+    "set-env": "export $(cat .env | grep \"^[^#;]\" |xargs)",
+    "build:docs": "jsdoc -c .jsdoc.json",
+    "coverage": "nyc npm test",
+    "lint": "eslint src/",
+    "lint:fix": "eslint --fix src/",
+    "dep:tree": "npm ls --all > dependency-tree.txt",
+    "start": "node src/server/app.js",
+    "test:code": "cross-env LOG_LEVEL=error NODE_ENV=test MONGOMS_DEBUG=0 ./node_modules/mocha/bin/mocha -u bdd --timeout 99999 --colors --exit --file ./test/mongodb.js './test/**/*.spec.js'",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md",
+    "test": "npm run lint && npm run test:code"
+  },
+  "dependencies": {
+    "@tbx/node-sharedlib": "git+ssh://git@bitbucket.org/tbxnet/tbx-node-sharedlib.git#v18.10.6",
+    "bluebird": "^3.7.2",
+    "body-parser": "^1.20.3",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "date-fns": "^2.28.0",
+    "dnscache": "^1.0.2",
+    "dotenv": "^10.0.0",
+    "express": "^4.21.1",
+    "ioredis": "^4.28.5",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^3.7.3",
+    "morgan": "^1.10.0",
+    "node-cache": "^5.1.2",
+    "openapi-types": "^9.3.0",
+    "rxjs": "^7.4.0",
+    "semver": "^7.5.4",
+    "serve-favicon": "^2.5.0",
+    "stream-json": "^1.7.5",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-dist": "^4.19.0",
+    "swagger-ui-express": "^5.0.0",
+    "uuid": "^9.0.1",
+    "yamlparser": "0.0.2",
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "chai": "^4.3.4",
+    "conventional-changelog-cli": "^2.1.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.0.1",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-n": "^16.0.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "fs-extra": "^9.1.0",
+    "husky": "^4.3.8",
+    "jsdoc": "^4.0.4",
+    "lint-staged": "^15.2.10",
+    "minami": "^1.2.3",
+    "mocha": "^9.1.3",
+    "mockery": "^2.1.0",
+    "mongodb-memory-server": "^7.6.3",
+    "nyc": "^15.1.0",
+    "sinon": "^19.0.2",
+    "supertest": "^7.0.0",
+    "taffydb": "^2.7.3"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run coverage"
+    }
+  },
+  "nyc": {
+    "all": true,
+    "check-coverage": true,
+    "branches": 60,
+    "lines": 80,
+    "functions": 80,
+    "statements": 80,
+    "include": [
+      "src/**"
+    ],
+    "exclude": [
+      "src/public",
+      "src/server",
+      "src/dbs/common/drivers"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ]
+  }
+}

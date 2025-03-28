@@ -1,0 +1,8 @@
+{
+  "clients": {
+    "default": "test",
+    "test": {
+      "id": "test"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "disableLocks": "${TBX_DISABLE_ROUTE_LOCKS}",
+  "ttlInSeconds": 5,
+  "pollingIntervalInMlSeconds": 300
+}

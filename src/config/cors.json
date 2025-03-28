@@ -1,0 +1,4 @@
+{
+  "origin": "${CORS_ORIGIN}",
+  "credentials": true
+}

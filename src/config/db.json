@@ -1,0 +1,80 @@
+{
+  "testDB1": {
+    "description": "An example using postgress",
+    "driver": "${DB_PG_DRIVER}",
+    "store": "testDB1",
+
+    "host": "${DB_PG_DRIVER_HOST}",
+    "database": "${DB_PG_DRIVER_DATABASE}",
+    "user": "${DB_PG_DRIVER_USER}",
+    "password": "${DB_PG_DRIVER_PASS}",
+
+    "max": 100,
+    "idleTimeoutMillis": 10000,
+    "connectionTimeoutMillis": 2000,
+    "statement_timeout": 500000
+  },
+
+  "testDB2": {
+    "description": "An example using elasticsearch",
+    "driver": "${DB_ELASTICSEARCH_DRIVER}",
+    "store": "testDB2",
+    "host": "${DB_ELASTICSEARCH_URL}",
+    "elasticDefaultIndex": "${DB_ELASTICSEARCH_INDEX}",
+    "requestTimeout": 40000
+  },
+
+  "testDB3": {
+    "description": "An example using mocks",
+    "driver": "testDB3",
+    "store": "someNameID",
+    "mock": true
+  },
+
+  "testDB4": {
+    "description": "An example using mongodb",
+    "driver": "${DB_MONGO_DRIVER}",
+    "store": "testDB4",
+    "url": "${DB_MONGO_URL}"
+  },
+
+  "testDB5": {
+    "description": "An example using redis",
+    "driver": "${REDIS_DRIVER}",
+    "name": "Redis1",
+    "connector": "memory",
+    "store": "testDB5",
+
+    "host": "${TBX_REDIS_HOST}",
+    "port": "${TBX_REDIS_PORT}"
+  },
+
+  "testMongo": {
+    "description": "An example using mongodb + mocks",
+    "driver": "${DB_MONGO_DRIVER}",
+    "store": "testMongo",
+    "url": "${DB_MONGO_URL}"
+  },
+
+  "sysMonitor": {
+    "description": "System monitor store",
+    "driver": "${DB_MONGO_DRIVER}",
+    "store": "sysMonitor",
+    "url": "${DB_MONGO_URL}"
+  },
+  "internalRedis": {
+    "description": "Redis lock db",
+    "driver": "${REDIS_DRIVER}",
+    "name": "lockRedisStore",
+    "store": "lockRedisStore",
+
+    "ignoreStoreOnFailure": true,
+
+    "host": "${TBX_REDIS_HOST}",
+    "port": "${TBX_REDIS_PORT}",
+    "connectTimeout": 300,
+    "socket": {
+      "connectTimeout": 200
+    }
+  }
+}

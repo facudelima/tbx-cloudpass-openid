@@ -1,0 +1,4 @@
+---
+kubernetes_deploy_project_tag: "{{ lookup('env','GO_REVISION') | lower }}"
+kubernetes_deploy_use_ssh_keys:
+  - libnode

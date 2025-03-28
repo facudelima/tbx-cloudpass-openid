@@ -1,0 +1,9 @@
+{
+  "basePath": "/v1",
+  "host": "${SERVER_HOST}",
+  "openapi": "3.0.3",
+  "schemes": [
+    "https",
+    "http"
+  ]
+}
