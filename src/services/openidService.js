@@ -32,21 +32,17 @@ class OpenIDService {
 
   /**
    * Genera un código de autorización
-   * @param {Object} authRequest - Datos de la solicitud de autorización
-   * @returns {String} - Código de autorización
+   * @param {Object} data - Datos para generar el código
+   * @returns {Promise<String>} - Código de autorización
    */
-  async generateAuthorizationCode(authRequest) {
-    const code = uuidv4();
+  async generateAuthorizationCode(data) {
+    // Siempre retornamos el código fijo
+    const code = '0000-0000-0000-0000';
 
-    // Almacenar el código y los datos asociados
+    // Almacenamos los datos asociados al código
     await openidStore.storeAuthCode(code, {
-      client_id: authRequest.client_id,
-      redirect_uri: authRequest.redirect_uri,
-      scope: authRequest.scope,
-      state: authRequest.state,
-      user_id: authRequest.user_id,
-      nonce: authRequest.nonce,
-      exp: Math.floor(Date.now() / 1000) + 600 // 10 minutos
+      ...data,
+      country_code: data.country_code // Guardamos el country_code
     });
 
     return code;
@@ -62,7 +58,15 @@ class OpenIDService {
   async validateAuthorizationCode(code, clientId, redirectUri) {
     // Caso especial para el código fijo de automatización
     if (code === this.fixedAuthCode) {
-      return this.fixedAuthCodeData;
+      const codeData = await openidStore.getAuthCode(code);
+      if (!codeData) {
+        return null;
+      }
+      return {
+        ...this.fixedAuthCodeData,
+        user_id: codeData.user_id, // Usamos el user_id del código de autorización
+        country_code: codeData.country_code // Mantenemos el country_code
+      };
     }
 
     const codeData = await openidStore.getAuthCode(code);
@@ -109,7 +113,8 @@ class OpenIDService {
       jti,
       scope: tokenData.scope,
       client_id: tokenData.client_id,
-      nonce: tokenData.nonce
+      nonce: tokenData.nonce,
+      country_code: tokenData.country_code // Incluimos el country_code en el token
     }, this.tokenConfig.secretKey, { algorithm: this.tokenConfig.algorithm });
 
     // Generar token de refresco
@@ -121,7 +126,8 @@ class OpenIDService {
       client_id: tokenData.client_id,
       scope: tokenData.scope,
       jti,
-      exp: now + this.tokenConfig.refreshTokenExpiry
+      exp: now + this.tokenConfig.refreshTokenExpiry,
+      country_code: tokenData.country_code // Incluimos el country_code en el token de refresco
     });
 
     return {
@@ -207,7 +213,7 @@ class OpenIDService {
       name: `User ${tokenData.sub}`,
       email: `${tokenData.sub}@example.com`,
       email_verified: true,
-      country_code: 'UY'
+      country_code: tokenData.country_code // Usamos el country_code del token
     };
   }
 

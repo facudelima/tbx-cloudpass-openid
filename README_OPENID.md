@@ -96,7 +96,7 @@ A continuación se muestran ejemplos de comandos CURL para probar cada uno de lo
 ### 1. Endpoint de autorización
 
 ```bash
-curl -v "http://localhost:3000/authorize?response_type=code&client_id=automation_client&redirect_uri=https://automation.cloudpass.local/callback&scope=openid%20profile%20email&state=random_state"
+curl -v "http://localhost:3000/authorize?response_type=code&client_id=automation_client&redirect_uri=https://automation.cloudpass.local/callback&scope=openid%20profile%20email&state=random_state&country=AR"
 ```
 
 Este comando mostrará un formulario de login HTML. Después de enviar el formulario, redirigirá a la URI especificada con un código de autorización.

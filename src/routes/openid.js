@@ -86,6 +86,12 @@ const bodyParser = require('body-parser');
  *         schema:
  *           type: string
  *         description: Valor único para prevenir replay attacks
+ *       - name: country
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Código de país
  *     responses:
  *       200:
  *         description: Formulario de login HTML
@@ -221,6 +227,8 @@ const generateLoginForm = (params) => {
         <h2>Login</h2>
         <form action="/authorize" method="post">
           ${hiddenInputs}
+          <input type="hidden" name="country" value="${params.country || ''}">
+          <input type="hidden" name="failureRedirect" value="${params.failureRedirect || ''}">
           <div class="form-group">
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" required>
@@ -245,7 +253,9 @@ router.get('/authorize', async(req, res) => {
     redirect_uri: redirectUri,
     scope,
     state,
-    nonce
+    nonce,
+    country, // Capturamos el parámetro country de la URL
+    failureRedirect // También capturamos failureRedirect por si lo necesitamos
   } = req.query;
 
   const client = config.clients.find(c => c.id === clientId);
@@ -263,7 +273,9 @@ router.get('/authorize', async(req, res) => {
     redirectUri,
     scope,
     state,
-    nonce
+    nonce,
+    country, // Pasamos el country al formulario
+    failureRedirect // Pasamos failureRedirect al formulario
   });
 
   res.send(loginForm);
@@ -298,6 +310,8 @@ router.get('/authorize', async(req, res) => {
  *                 type: string
  *               password:
  *                 type: string
+ *               country:
+ *                 type: string
  *     responses:
  *       302:
  *         description: Redirección con código de autorización
@@ -305,17 +319,42 @@ router.get('/authorize', async(req, res) => {
 
 // Endpoint para procesar el formulario de login
 router.post('/authorize', async(req, res) => {
-  const { client_id: clientId, redirect_uri: redirectUri, scope, state,
-    nonce, username } = req.body;
+  const {
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    scope,
+    state,
+    nonce,
+    username,
+    country
+  } = req.body;
+
+  // Validar que los parámetros requeridos estén presentes
+  if (!clientId || !redirectUri) {
+    return res.status(400).json({
+      error: 'invalid_request',
+      error_description: 'Faltan parámetros requeridos (client_id o redirect_uri)'
+    });
+  }
+
+  // Validar el cliente y su redirect_uri
+  const client = config.clients.find(c => c.id === clientId);
+  if (!client || !client.redirectUris.includes(redirectUri)) {
+    return res.status(400).json({
+      error: 'invalid_client',
+      error_description: 'Cliente no válido o URI de redirección no permitida'
+    });
+  }
 
   // Generar código de autorización
   const code = await openidService.generateAuthorizationCode({
-    clientId,
-    redirectUri,
+    client_id: clientId,
+    redirect_uri: redirectUri,
     scope,
     state,
     user_id: username,
-    nonce: nonce || ''
+    nonce: nonce || '',
+    country_code: country
   });
 
   // Redireccionar con el código de autorización
