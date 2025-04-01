@@ -266,7 +266,6 @@ class OpenIDService {
     // Caso especial para template inválido
     if (subscriberId === 'test_user_invalid_template') {
       return {
-        access: false,
         reason: 'invalid_template_response'
       };
     }
