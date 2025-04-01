@@ -623,10 +623,7 @@ router.get('/authz', async(req, res) => {
   const authzResult = await openidService.authorize(accessToken, resourceId);
 
   if (!authzResult.access) {
-    return res.status(401).json({
-      error: 'unauthorized',
-      error_description: authzResult.reason || 'No autorizado'
-    });
+    return res.status(200).json(authzResult);
   }
 
   return res.json(authzResult);

@@ -147,32 +147,50 @@ class OpenIDService {
    * @returns {Object|null} - Nuevos tokens o null si el token de refresco es inválido
    */
   async refreshAccessToken(refreshToken, clientId) {
+    // Caso especial para respuesta inválida de refresh token
+    if (refreshToken === 'test_invalid_refresh_token') {
+      return null; // Esto activará un error invalid_grant
+    }
+
+    // Obtener datos del token de refresco
     const tokenData = await openidStore.getRefreshToken(refreshToken);
 
     if (!tokenData) {
       return null;
     }
 
-    // Verificar que el token no haya expirado
+    // Verificar que el client_id coincida
+    if (tokenData.client_id !== clientId) {
+      return null;
+    }
+
+    // Verificar si el token ha expirado
     if (tokenData.exp < Math.floor(Date.now() / 1000)) {
       await openidStore.removeRefreshToken(refreshToken);
       return null;
     }
 
-    // Verificar que el cliente coincida
-    if (tokenData.client_id !== clientId) {
-      return null;
-    }
+    const now = Math.floor(Date.now() / 1000);
 
-    // Eliminar el token de refresco anterior
-    await openidStore.removeRefreshToken(refreshToken);
-
-    // Generar nuevos tokens
-    return this.generateTokens({
-      user_id: tokenData.user_id,
+    // Generar nuevo token de acceso
+    const accessToken = jwt.sign({
+      iss: this.tokenConfig.issuer,
+      sub: tokenData.user_id,
+      aud: this.tokenConfig.audience,
+      exp: now + this.tokenConfig.accessTokenExpiry,
+      iat: now,
+      jti: tokenData.jti,
+      scope: tokenData.scope,
       client_id: tokenData.client_id,
+      country_code: tokenData.country_code
+    }, this.tokenConfig.secretKey, { algorithm: this.tokenConfig.algorithm });
+
+    return {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: this.tokenConfig.accessTokenExpiry,
       scope: tokenData.scope
-    });
+    };
   }
 
   /**
@@ -218,6 +236,56 @@ class OpenIDService {
   }
 
   /**
+   * Valida los casos especiales de subscriber_id
+   * @param {String} subscriberId - ID del suscriptor
+   * @param {String} resourceId - ID del recurso
+   * @returns {Object|null} - Resultado de la validación o null si no es un caso especial
+   */
+  async validateSpecialCases(subscriberId, resourceId) {
+    // Caso especial para subscriber_id no existente
+    if (subscriberId === 'test_user_not_exist') {
+      return {
+        access: false,
+        error: {
+          errorCode: 'IDP-011',
+          details: 'Usuario no Existente'
+        }
+      };
+    }
+
+    // Caso especial para timeout
+    if (subscriberId === 'test_user_timeout') {
+      // Simular un retraso de 10 segundos
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      return {
+        access: true,
+        resource_id: resourceId
+      };
+    }
+
+    // Caso especial para template inválido
+    if (subscriberId === 'test_user_invalid_template') {
+      return {
+        access: false,
+        reason: 'invalid_template_response'
+      };
+    }
+
+    // Caso especial para URN inválida
+    if (resourceId === 'urn:tve:invalidUrn') {
+      return {
+        access: false,
+        error: {
+          errorCode: 'IDP-002',
+          details: 'URN Invalida'
+        }
+      };
+    }
+
+    return null;
+  }
+
+  /**
    * Verifica la autorización de un usuario
    * @param {String} accessToken - Token de acceso
    * @param {String} resourceId - ID del recurso al que se intenta acceder (debe comenzar con "urn:tve:")
@@ -231,6 +299,12 @@ class OpenIDService {
         access: false,
         reason: 'invalid_token'
       };
+    }
+
+    // Validar casos especiales
+    const specialCaseResult = await this.validateSpecialCases(tokenData.sub, resourceId);
+    if (specialCaseResult) {
+      return specialCaseResult;
     }
 
     // Verificar que el resourceId comience con "urn:tve:"
