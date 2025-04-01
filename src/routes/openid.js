@@ -622,7 +622,17 @@ router.get('/authz', async(req, res) => {
   // Validar el token de acceso y autorizar
   const authzResult = await openidService.authorize(accessToken, resourceId);
 
+  if (!authzResult) {
+    return res.status(401).json({
+      error: 'invalid_token',
+      error_description: 'Token no válido'
+    });
+  }
+
   if (!authzResult.access) {
+    if (authzResult.reason === 'invalid_template_response') {
+      return res.status(400).json(authzResult);
+    }
     return res.status(200).json(authzResult);
   }
 

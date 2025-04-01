@@ -294,10 +294,7 @@ class OpenIDService {
     const tokenData = await this.validateAccessToken(accessToken);
 
     if (!tokenData) {
-      return {
-        access: false,
-        reason: 'invalid_token'
-      };
+      return null;
     }
 
     // Validar casos especiales
