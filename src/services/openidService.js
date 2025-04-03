@@ -148,7 +148,7 @@ class OpenIDService {
    */
   async refreshAccessToken(refreshToken, clientId) {
     // Caso especial para respuesta inválida de refresh token
-    if (refreshToken === 'test_invalid_refresh_token') {
+    if (refreshToken.includes('test_invalid_refresh_token')) {
       return null; // Esto activará un error invalid_grant
     }
 
@@ -243,7 +243,7 @@ class OpenIDService {
    */
   async validateSpecialCases(subscriberId, resourceId) {
     // Caso especial para subscriber_id no existente
-    if (subscriberId === 'test_user_not_exist') {
+    if (subscriberId.includes('test_user_not_exist')) {
       return {
         access: false,
         error: {
@@ -254,7 +254,7 @@ class OpenIDService {
     }
 
     // Caso especial para timeout
-    if (subscriberId === 'test_user_timeout') {
+    if (subscriberId.includes('test_user_timeout')) {
       // Simular un retraso de 10 segundos
       await new Promise((resolve) => setTimeout(resolve, 10000));
       return {
@@ -264,7 +264,7 @@ class OpenIDService {
     }
 
     // Caso especial para template inválido
-    if (subscriberId === 'test_user_invalid_template') {
+    if (subscriberId.includes('test_user_invalid_template')) {
       return {
         reason: 'invalid_template_response'
       };
