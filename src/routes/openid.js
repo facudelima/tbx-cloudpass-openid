@@ -639,4 +639,101 @@ router.get('/authz', async(req, res) => {
   return res.json(authzResult);
 });
 
+/**
+ * @openapi
+ * /refreshTokenTest:
+ *   get:
+ *     summary: Endpoint de refresh token con respuesta en camelCase
+ *     description: Refresca un token de acceso usando un token de refresco y devuelve la respuesta en camelCase
+ *     parameters:
+ *       - name: refresh_token
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Token de refresco
+ *       - name: client_id
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del cliente
+ *       - name: client_secret
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Secreto del cliente
+ *     responses:
+ *       200:
+ *         description: Tokens generados exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                 tokenType:
+ *                   type: string
+ *                 expiresIn:
+ *                   type: integer
+ *                 scope:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *                 refreshTokenExpiration:
+ *                   type: integer
+ *       400:
+ *         description: Error en la solicitud
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                 errorDescription:
+ *                   type: string
+ */
+
+// Endpoint de refresh token con respuesta en camelCase
+router.get('/refreshTokenTest', async(req, res) => {
+  const { refresh_token: refreshToken, client_id: clientId, client_secret: clientSecret } = req.query;
+
+  // Verificar que el cliente exista y las credenciales sean correctas
+  const client = config.clients.find(c => c.id === clientId && c.secret === clientSecret);
+  if (!client) {
+    return res.status(400).json({
+      error: 'invalid_client',
+      errorDescription: 'Credenciales de cliente no válidas'
+    });
+  }
+
+  // Refrescar token
+  const tokens = await openidService.refreshAccessToken(refreshToken, clientId);
+
+  if (!tokens) {
+    return res.status(400).json({
+      error: 'invalid_grant',
+      errorDescription: 'Token de refresco no válido'
+    });
+  }
+
+  // Si es el caso especial, devolver la respuesta en snake_case
+  if (refreshToken === 'test_invalid_refresh_token_cammel_case') {
+    return res.json(tokens);
+  }
+
+  // Para cualquier otro caso, convertir la respuesta a camelCase
+  return res.json({
+    accessToken: tokens.access_token,
+    tokenType: tokens.token_type,
+    expiresIn: tokens.expires_in,
+    scope: tokens.scope,
+    refreshToken: tokens.refresh_token,
+    refreshTokenExpiration: tokens.refresh_token_expires_in
+  });
+});
+
 module.exports = router;

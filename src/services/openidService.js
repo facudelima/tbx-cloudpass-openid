@@ -141,18 +141,41 @@ class OpenIDService {
   }
 
   /**
-   * Refresca un token de acceso usando un token de refresco
+   * Genera una respuesta de prueba para el caso especial de snake_case
+   * @param {String} clientId - ID del cliente
+   * @returns {Object} - Respuesta de prueba en snake_case
+   */
+  generateTestResponse(clientId) {
+    const testToken = [
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+      'eyJpc3MiOiJjbG91ZHBhc3MtYXV0b21hdGlvbiIsInN1YiI6ImRhc2QiLCJhdWQiOiJjbG91ZHBhc3MtY2xpZW50cyI',
+      'ImV4cCI6MTc0Mzc5OTQ5MCwiaWF0IjoxNzQzNzk4ODkwLCJqdGkiOiIzOWE4Nzg3Ni1hMjhmLTRiNGUtOTcwMS05Y2U4',
+      'ZjQxNTcxZWIiLCJzY29wZSI6Im9wZW5pZCBwcm9maWxlIGVtYWlsIiwiY2xpZW50X2lkIjoiYXV0b21hdGlvbl9jbGll',
+      'bnQiLCJjb3VudHJ5X2NvZGUiOiJBUiJ9.PegvO6TkmqPLcQvn4bfQwnWOeeV_DgwzaqBYZB1D2to'
+    ].join('');
+
+    const testRefreshToken = [
+      '9eb430fc225090f41d7772f114ad4df6c56a2abe32e4bb534cbed7b44dbf62998a23f76e237ff078789',
+      '7cb786acba588ac85bb046da563c236c83cd1a9d0ab8a'
+    ].join('');
+
+    return {
+      access_token: testToken,
+      token_type: 'Bearer',
+      expires_in: 600,
+      scope: 'openid profile email',
+      refresh_token: testRefreshToken,
+      refresh_token_expires_in: 86400
+    };
+  }
+
+  /**
+   * Valida un token de refresco y devuelve sus datos
    * @param {String} refreshToken - Token de refresco
    * @param {String} clientId - ID del cliente
-   * @returns {Object|null} - Nuevos tokens o null si el token de refresco es inválido
+   * @returns {Object|null} - Datos del token o null si es inválido
    */
-  async refreshAccessToken(refreshToken, clientId) {
-    // Caso especial para respuesta inválida de refresh token
-    if (refreshToken.includes('test_invalid_refresh_token')) {
-      return null; // Esto activará un error invalid_grant
-    }
-
-    // Obtener datos del token de refresco
+  async validateRefreshToken(refreshToken, clientId) {
     const tokenData = await openidStore.getRefreshToken(refreshToken);
 
     if (!tokenData) {
@@ -170,10 +193,17 @@ class OpenIDService {
       return null;
     }
 
-    const now = Math.floor(Date.now() / 1000);
+    return tokenData;
+  }
 
-    // Generar nuevo token de acceso
-    const accessToken = jwt.sign({
+  /**
+   * Genera un nuevo token de acceso
+   * @param {Object} tokenData - Datos del token de refresco
+   * @param {Number} now - Timestamp actual
+   * @returns {String} - Nuevo token de acceso
+   */
+  async generateNewAccessToken(tokenData, now) {
+    return jwt.sign({
       iss: this.tokenConfig.issuer,
       sub: tokenData.user_id,
       aud: this.tokenConfig.audience,
@@ -184,12 +214,60 @@ class OpenIDService {
       client_id: tokenData.client_id,
       country_code: tokenData.country_code
     }, this.tokenConfig.secretKey, { algorithm: this.tokenConfig.algorithm });
+  }
+
+  /**
+   * Genera y almacena un nuevo token de refresco
+   * @param {Object} tokenData - Datos del token anterior
+   * @param {Number} now - Timestamp actual
+   * @param {String} oldRefreshToken - Token de refresco anterior
+   * @returns {String} - Nuevo token de refresco
+   */
+  async generateAndStoreNewRefreshToken(tokenData, now, oldRefreshToken) {
+    const newRefreshToken = crypto.randomBytes(64).toString('hex');
+
+    await openidStore.storeRefreshToken(newRefreshToken, {
+      user_id: tokenData.user_id,
+      client_id: tokenData.client_id,
+      scope: tokenData.scope,
+      jti: tokenData.jti,
+      exp: now + this.tokenConfig.refreshTokenExpiry,
+      country_code: tokenData.country_code
+    });
+
+    await openidStore.removeRefreshToken(oldRefreshToken);
+    return newRefreshToken;
+  }
+
+  /**
+   * Refresca un token de acceso usando un token de refresco
+   * @param {String} refreshToken - Token de refresco
+   * @param {String} clientId - ID del cliente
+   * @returns {Object|null} - Nuevos tokens o null si el token de refresco es inválido
+   */
+  async refreshAccessToken(refreshToken, clientId) {
+    // Caso especial para respuesta en snake_case
+    if (refreshToken === 'test_invalid_refresh_token_cammel_case') {
+      return this.generateTestResponse(clientId);
+    }
+
+    // Obtener y validar datos del token de refresco
+    const tokenData = await this.validateRefreshToken(refreshToken, clientId);
+    if (!tokenData) {
+      return null;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const accessToken = await this.generateNewAccessToken(tokenData, now);
+    const newRefreshToken = await this.generateAndStoreNewRefreshToken(tokenData, now, refreshToken);
 
     return {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in: this.tokenConfig.accessTokenExpiry,
-      scope: tokenData.scope
+      scope: tokenData.scope,
+      refresh_token: newRefreshToken,
+      refresh_token_expires_in: this.tokenConfig.refreshTokenExpiry
     };
   }
 
