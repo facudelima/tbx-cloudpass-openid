@@ -252,20 +252,20 @@ class OpenIDService {
     }
 
     // Obtener y validar datos del token de refresco
-    /*     const tokenData = await this.validateRefreshToken(refreshToken, clientId);
+    const tokenData = await this.validateRefreshToken(refreshToken, clientId);
     if (!tokenData) {
       return null;
-    } */
+    }
 
     const now = Math.floor(Date.now() / 1000);
-    const accessToken = 'mockaccess_token';/* await this.generateNewAccessToken(tokenData, now); */
-    const newRefreshToken = 'mockrefresh_token';/* await this.generateAndStoreNewRefreshToken(tokenData, now, refreshToken); */ 
+    const accessToken = await this.generateNewAccessToken(tokenData, now);
+    const newRefreshToken = await this.generateAndStoreNewRefreshToken(tokenData, now, refreshToken);
 
     return {
       access_token: accessToken,
       token_type: 'Bearer',
       expires_in: this.tokenConfig.accessTokenExpiry,
-      scope: 'openid profile email',
+      scope: tokenData.scope,
       refresh_token: newRefreshToken,
       refresh_token_expires_in: this.tokenConfig.refreshTokenExpiry
     };
@@ -321,7 +321,7 @@ class OpenIDService {
    */
   async validateSpecialCases(subscriberId, resourceId) {
     // Caso especial para subscriber_id no existente
-    if (subscriberId?.includes('test_user_not_exist')) {
+    if (subscriberId.includes('test_user_not_exist')) {
       return {
         access: false,
         error: {
@@ -332,7 +332,7 @@ class OpenIDService {
     }
 
     // Caso especial para timeout
-    if (subscriberId?.includes('test_user_timeout')) {
+    if (subscriberId.includes('test_user_timeout')) {
       // Simular un retraso de 10 segundos
       await new Promise((resolve) => setTimeout(resolve, 10000));
       return {
@@ -342,7 +342,7 @@ class OpenIDService {
     }
 
     // Caso especial para template inválido
-    if (subscriberId?.includes('test_user_invalid_template')) {
+    if (subscriberId.includes('test_user_invalid_template')) {
       return {
         reason: 'invalid_template_response'
       };
@@ -369,14 +369,14 @@ class OpenIDService {
    * @returns {Object} - Resultado de la autorización
    */
   async authorize(accessToken, resourceId) {
-    /* const tokenData = await this.validateAccessToken(accessToken);
+    const tokenData = await this.validateAccessToken(accessToken);
 
     if (!tokenData) {
       return null;
-    } */
+    }
 
     // Validar casos especiales
-    const specialCaseResult = await this.validateSpecialCases('tokenData.sub', resourceId);
+    const specialCaseResult = await this.validateSpecialCases(tokenData.sub, resourceId);
     if (specialCaseResult) {
       return specialCaseResult;
     }
