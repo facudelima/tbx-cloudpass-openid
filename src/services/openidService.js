@@ -257,11 +257,9 @@ class OpenIDService {
       return null;
     } */
 
-    // const now = Math.floor(Date.now() / 1000);
-    const accessToken = 'mockaccess_token';
-    /* await this.generateNewAccessToken(tokenData, now); */
-    const newRefreshToken = 'mockrefresh_token';
-    /* await this.generateAndStoreNewRefreshToken(tokenData, now, refreshToken); */
+    const now = Math.floor(Date.now() / 1000);
+    const accessToken = 'mockaccess_token';/* await this.generateNewAccessToken(tokenData, now); */
+    const newRefreshToken = 'mockrefresh_token';/* await this.generateAndStoreNewRefreshToken(tokenData, now, refreshToken); */ 
 
     return {
       access_token: accessToken,
