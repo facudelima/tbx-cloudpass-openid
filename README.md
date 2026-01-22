@@ -104,7 +104,7 @@ Este comando mostrará un formulario de login HTML. Después de enviar el formul
 ### 2. Endpoint de token (con código de autorización fijo)
 
 ```bash
-curl -v -X POST -H "Content-Type: application/x-www-form-urlencoded" \
+curl -v -X POST -H "Content-Type: application/x-www-form-urlencoded" \ 
   -d "grant_type=authorization_code&client_id=automation_client&client_secret=automation_secret&code=0000-0000-0000-0000&redirect_uri=https://automation.cloudpass.local/callback" \
   http://localhost:3000/token
 ```
