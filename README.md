@@ -1,4 +1,4 @@
-# OpenID Provider para CloudPass
+# OpenID Provider para CloudPass 
 
 Este módulo implementa un proveedor de identidad (IDP) con soporte para OpenID Connect, diseñado específicamente para automatizar escenarios de autorización y pruebas con tokens de refresco en CloudPass.
 
