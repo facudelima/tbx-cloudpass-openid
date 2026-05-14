@@ -6,9 +6,9 @@
 
 # Project ROOT
 cd ..
-
+ 
 FOLDERS=(
-./src/dbs/testDB4
+./src/dbs/testDB4 
 ./src/dbs/testDB5
 )
 
@@ -17,11 +17,11 @@ FILES=(
 ./test/services/TestService.spec.js
 
 ./test/routes/test.spec.js
-
+ 
 ./test/dbs/mongodb.spec.js
 ./test/dbs/TestMongoStore.spec.js
 
-./src/services/ExternalTestService.js
+./src/services/ExternalTestService.js 
 ./src/services/TestService.js
 
 
