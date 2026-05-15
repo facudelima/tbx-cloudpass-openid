@@ -11,13 +11,13 @@ const
  */
 class InternalRedisStore {
   constructor(driver, systemService) {
-    this.storeDriver = driver;
+    this.storeDriver = driver; 
     if (systemService) {
       systemService.register(this, 'InternalRedisStore');
     }
   }
   // cache options
-  get encodeData() {
+  get encodeData() { 
     return false;
   }
   // cache options
@@ -26,7 +26,7 @@ class InternalRedisStore {
   }
 
   _getSafeKey(key, usedFor = 'redisLock') {
-    return `${packageJson.name}-${usedFor}-${key}`;
+    return `${packageJson.name}-${usedFor}-${key}`; 
   }
 
   // ////////////////////// api lock methods
@@ -49,9 +49,9 @@ class InternalRedisStore {
     };
   }
 
-  async releaseByLockKey(key) {
+  async releaseByLockKey(key) { 
     let redis = await this.storeDriver.getClient();
-    await redis.del(this._getSafeKey(key));
+    await redis.del(this._getSafeKey(key)); 
     return true;
   }
 
